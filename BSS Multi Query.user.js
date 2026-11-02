@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name         BES Portal - Multi Query (Final Masterpiece)
 // @namespace    http://tampermonkey.net/
-// @version      62.0
+// @version      63.0
 // @description  Ultimate combination of Smart FBB toggle and working Orders API - Premium UI + Excel Export
+// @author       Anas Wael
 // @match        *://bss.te.eg:12900/*
 // @grant        GM_xmlhttpRequest
 // @run-at       document-idle
+// @downloadURL  https://raw.githubusercontent.com/anaswaelali/BSS/main/BSS%20Multi%20Query.user.js
+// @updateURL    https://raw.githubusercontent.com/anaswaelali/BSS/main/BSS%20Multi%20Query.user.js
 // ==/UserScript==
 
 (function() {
@@ -633,7 +636,6 @@
                                     <th class="mq-orders-th">Orders (Last Activity)</th>
                                     <th>Operation</th><th>Operation Time</th><th>Financial Status</th>
                                     <th>Operator Account</th><th>Operator OU</th><th>Customer ID</th>
-                                    <th>Convergent FV</th>
                                 </tr>
                             </thead>
                             <tbody id="mq-results-body"></tbody>
@@ -644,7 +646,7 @@
 
                 <div class="mq-footer">
                     <span class="mq-footer-line"></span>
-                    Developed By : Anas Wael @2026
+                    Powered By : Anas Wael @2026
                     <span class="mq-footer-line"></span>
                 </div>
 
@@ -656,7 +658,7 @@
         const customToggleBtn = targetDoc.getElementById('mq-fbb-toggle');
         const resultsBody = targetDoc.getElementById('mq-results-body');
         const tableControls = targetDoc.getElementById('mq-table-controls');
-
+        
         let isFbbState = false;
         let currentSearchType = 'service'; // 'service' or 'serial'
 
@@ -681,25 +683,25 @@
                 currentSearchType = 'serial';
                 searchTypeToggle.className = 'mq-search-type-toggle serial';
                 searchTypeToggle.innerText = 'Searching by: Serial Number';
-
+                
                 // Force FBB OFF and disable
                 isFbbState = false;
                 updateToggleUI();
                 customToggleBtn.classList.add('disabled');
-
+                
             } else {
                 currentSearchType = 'service';
                 searchTypeToggle.className = 'mq-search-type-toggle service';
                 searchTypeToggle.innerText = 'Searching by: Service Number';
-
+                
                 // Enable FBB
                 customToggleBtn.classList.remove('disabled');
             }
         };
 
-        mqBtn.onclick = () => {
-            modal.style.display = 'flex';
-            targetDoc.getElementById('mq-results-container').style.display = 'none';
+        mqBtn.onclick = () => { 
+            modal.style.display = 'flex'; 
+            targetDoc.getElementById('mq-results-container').style.display = 'none'; 
             tableControls.style.display = 'none';
             targetDoc.getElementById('mq-status-text').innerText = 'Ready...';
         };
@@ -802,18 +804,18 @@
 
         const checkboxes = Array.from(targetDoc.querySelectorAll('input[type="checkbox"]'));
         let pageFbbCheckbox = checkboxes.find(cb => cb.offsetParent !== null && (cb.parentElement.innerText.includes('FBB') || (cb.nextElementSibling && cb.nextElementSibling.innerText.includes('FBB')))) || checkboxes.find(cb => cb.offsetParent !== null);
-
+        
         if (currentSearchType === 'service' && pageFbbCheckbox && pageFbbCheckbox.checked !== isFbb) {
-            pageFbbCheckbox.click();
-            await new Promise(r => setTimeout(r, 300));
+            pageFbbCheckbox.click(); 
+            await new Promise(r => setTimeout(r, 300)); 
         }
 
         for (let i = 0; i < numbers.length; i++) {
             if (stopSearch) break;
-
+            
             let rawNum = numbers[i];
             let finalSearchNum = rawNum;
-
+            
             if (currentSearchType === 'service') {
                 if (isFbb) {
                     if (!finalSearchNum.toUpperCase().startsWith('FBB')) {
@@ -831,9 +833,10 @@
             }
 
             statusText.innerHTML = `Searching (${i + 1}/${numbers.length}): <span style="color:#6f2c91;">${finalSearchNum}</span>`;
-
+            
             let loadingRow = targetDoc.createElement('tr');
-            loadingRow.innerHTML = `<td style="font-weight:bold; color:#6f2c91;">${finalSearchNum}</td><td colspan="11" style="color: #d97706; font-weight: bold;">Fetching data...</td>`;
+            // ✅ تغيير الـ colspan لـ 10 عشان العدد الكلي للأعمدة بقى 11
+            loadingRow.innerHTML = `<td style="font-weight:bold; color:#6f2c91;">${finalSearchNum}</td><td colspan="10" style="color: #d97706; font-weight: bold;">Fetching data...</td>`;
             resultsBody.appendChild(loadingRow);
             loadingRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
@@ -842,14 +845,14 @@
                 if (serialInput) serialInput.value = '';
                 if (serviceInput) serviceInput.value = '';
 
-                inputField.focus();
+                inputField.focus(); 
                 inputField.value = finalSearchNum;
-
+                
                 const win = targetDoc.defaultView || window;
                 const eventInput = win.document.createEvent('HTMLEvents');
                 eventInput.initEvent('input', true, true);
                 inputField.dispatchEvent(eventInput);
-
+                
                 const eventChange = win.document.createEvent('HTMLEvents');
                 eventChange.initEvent('change', true, true);
                 inputField.dispatchEvent(eventChange);
@@ -859,13 +862,13 @@
 
                 originalSearchBtn.click();
 
-                let foundData = false; let waitTime = 0; let extractedItems = [];
+                let foundData = false; let waitTime = 0; let extractedItems = []; 
 
                 while (waitTime < 8000) {
                     if (stopSearch) break;
                     await new Promise(resolve => setTimeout(resolve, 500));
                     waitTime += 500;
-                    if (targetDoc.body.innerText.includes('No record is found')) break;
+                    if (targetDoc.body.innerText.includes('No record is found')) break; 
 
                     const dataRows = Array.from(targetDoc.querySelectorAll('.ngRow, table tbody tr'))
                         .filter(tr => !tr.closest('.mq-table') && !tr.closest('#mq-modal-box'));
@@ -886,7 +889,7 @@
                             const opTime = getVal(4);
                             let timeVal = 0;
                             try { const parts = opTime.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/); if (parts) timeVal = new Date(parts[3], parts[2]-1, parts[1], parts[4], parts[5], parts[6]).getTime(); } catch(e) {}
-                            tempExtracted.push({ num: finalSearchNum, serial, op: getVal(1), service, conv: getVal(3), timeStr: opTime, timeVal, fin: getVal(5), offer: getVal(6), acc: getVal(7), ou: getVal(8), cust: getVal(9) });
+                            tempExtracted.push({ num: finalSearchNum, serial, op: getVal(1), service, timeStr: opTime, timeVal, fin: getVal(5), offer: getVal(6), acc: getVal(7), ou: getVal(8), cust: getVal(9) });
                         }
                     });
 
@@ -896,7 +899,7 @@
                             const key = `${item.serial}|${item.service}|${item.timeStr}|${item.offer}`;
                             if (!seen.has(key)) { seen.add(key); extractedItems.push(item); }
                         });
-                        foundData = true; break;
+                        foundData = true; break; 
                     }
                 }
 
@@ -913,15 +916,15 @@
                         const hasOlder = olderDevices.length > 0;
                         const rowClass = hasOlder ? 'mq-parent-row' : ''; const arrowHtml = hasOlder ? '<span class="mq-arrow">▶</span>' : '';
 
-                        finalHTML += `<tr class="${rowClass}" data-num="${key}"><td class="mq-toggle-cell"><div class="mq-toggle-content">${arrowHtml} ${latestDevice.num}</div></td><td style="font-weight:bold; color:#1e293b;">${latestDevice.offer}</td><td>${latestDevice.serial}</td><td>${latestDevice.service}</td><td class="orders-cell" data-service="${key}"><span class="om-loading">Fetching Order...</span></td><td>${latestDevice.op}</td><td>${latestDevice.timeStr}</td><td>${latestDevice.fin}</td><td>${latestDevice.acc}</td><td>${latestDevice.ou}</td><td>${latestDevice.cust}</td><td>${latestDevice.conv}</td></tr>`;
-
+                        finalHTML += `<tr class="${rowClass}" data-num="${key}"><td class="mq-toggle-cell"><div class="mq-toggle-content">${arrowHtml} ${latestDevice.num}</div></td><td style="font-weight:bold; color:#1e293b;">${latestDevice.offer}</td><td>${latestDevice.serial}</td><td>${latestDevice.service}</td><td class="orders-cell" data-service="${key}"><span class="om-loading">Fetching Order...</span></td><td>${latestDevice.op}</td><td>${latestDevice.timeStr}</td><td>${latestDevice.fin}</td><td>${latestDevice.acc}</td><td>${latestDevice.ou}</td><td>${latestDevice.cust}</td></tr>`;
+                        
                         olderDevices.forEach(d => {
-                            finalHTML += `<tr class="mq-child-row" data-parent="${key}" style="display: none;"><td class="mq-child-arrow-cell">↳</td><td style="color:#64748b;">${d.offer}</td><td style="color:#64748b;">${d.serial}</td><td style="color:#64748b;">${d.service}</td><td style="color:#64748b;">-</td><td style="color:#64748b;">${d.op}</td><td style="color:#64748b;">${d.timeStr}</td><td style="color:#64748b;">${d.fin}</td><td style="color:#64748b;">${d.acc}</td><td style="color:#64748b;">${d.ou}</td><td style="color:#64748b;">${d.cust}</td><td style="color:#64748b;">${d.conv}</td></tr>`;
+                            finalHTML += `<tr class="mq-child-row" data-parent="${key}" style="display: none;"><td class="mq-child-arrow-cell">↳</td><td style="color:#64748b;">${d.offer}</td><td style="color:#64748b;">${d.serial}</td><td style="color:#64748b;">${d.service}</td><td style="color:#64748b;">-</td><td style="color:#64748b;">${d.op}</td><td style="color:#64748b;">${d.timeStr}</td><td style="color:#64748b;">${d.fin}</td><td style="color:#64748b;">${d.acc}</td><td style="color:#64748b;">${d.ou}</td><td style="color:#64748b;">${d.cust}</td></tr>`;
                         });
                     }
                     loadingRow.insertAdjacentHTML('afterend', finalHTML);
                     loadingRow.remove();
-
+                    
                     const orderCells = resultsBody.querySelectorAll('.orders-cell');
                     orderCells.forEach(cell => {
                         if (cell.innerHTML.includes('Fetching Order...')) {
@@ -931,18 +934,18 @@
                     });
 
                 } else {
-                    loadingRow.innerHTML = `<td style="font-weight:bold; color:#6f2c91;">${finalSearchNum}</td><td colspan="11" class="mq-status-error">No Record Found in BES</td>`;
+                    loadingRow.innerHTML = `<td style="font-weight:bold; color:#6f2c91;">${finalSearchNum}</td><td colspan="10" class="mq-status-error">No Record Found in BES</td>`;
                 }
             } catch (err) {
-                loadingRow.innerHTML = `<td style="font-weight:bold; color:#6f2c91;">${finalSearchNum}</td><td colspan="11" class="mq-status-error">Error: ${err.message}</td>`;
+                loadingRow.innerHTML = `<td style="font-weight:bold; color:#6f2c91;">${finalSearchNum}</td><td colspan="10" class="mq-status-error">Error: ${err.message}</td>`;
             }
         }
 
         isSearching = false; startBtn.style.display = 'inline-block'; stopBtn.style.display = 'none';
-        if (!stopSearch) {
-            statusText.innerHTML = '<span style="color: #16a34a;">✔ All queries completed!</span>';
-        } else {
-            statusText.innerHTML = '<span style="color: #dc2626;">Search Stopped by User.</span>';
+        if (!stopSearch) { 
+            statusText.innerHTML = '<span style="color: #16a34a;">✔ All queries completed!</span>'; 
+        } else { 
+            statusText.innerHTML = '<span style="color: #dc2626;">Search Stopped by User.</span>'; 
         }
         if (resultsBody.querySelectorAll('tr').length > 0) {
             tableControls.style.display = 'flex';
@@ -1010,7 +1013,7 @@
 
                     let latestOrder = json1.orders[0];
                     let orderId = latestOrder.orderId;
-
+                    
                     if (!latestOrder.orderLineList || latestOrder.orderLineList.length === 0) {
                         cellElement.innerHTML = `<span style="color:#2563eb;">${latestOrder.orderStatusName}</span>`;
                         return;
@@ -1045,7 +1048,7 @@
                                     if (orderInfo.activityInfoList && orderInfo.activityInfoList.length > 0) {
                                         let activities = orderInfo.activityInfoList;
                                         let lastActivity = activities[activities.length - 1].activityName;
-
+                                        
                                         if (activities[activities.length - 1].status === "Executing") {
                                             cellElement.innerHTML = `<span style="color:#d97706; font-weight:bold;">${lastActivity} (Executing)</span>`;
                                         } else {
@@ -1084,5 +1087,5 @@
     }
 
     window.addEventListener('load', () => setTimeout(init, 1000));
-    setInterval(init, 3000);
+    setInterval(init, 3000); 
 })();
